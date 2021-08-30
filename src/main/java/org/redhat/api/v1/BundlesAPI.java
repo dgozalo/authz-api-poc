@@ -12,6 +12,7 @@ import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.jboss.logging.Logger;
 import org.redhat.authz.opa.bundles.BundlesLoader;
 
 import java.io.IOException;
@@ -21,6 +22,9 @@ import java.io.InputStream;
 @Path("/v1/bundles")
 @ApplicationScoped
 public class BundlesAPI {
+
+    @Inject
+    Logger logger;
 
     private BundlesLoader bundlesLoader;
 
@@ -50,6 +54,7 @@ public class BundlesAPI {
     private void putDataJsonInTar(TarArchiveOutputStream tOut) throws IOException {
         TarArchiveEntry tarEntry = new TarArchiveEntry("data.json");
         String data = bundlesLoader.getExpandedRelationData();
+        logger.info("Data obtained: "+data);
         byte[] dataBytes = data.getBytes();
         tarEntry.setSize(dataBytes.length);
         tOut.putArchiveEntry(tarEntry);
@@ -58,9 +63,11 @@ public class BundlesAPI {
     }
 
     private void putPolicyInTar(TarArchiveOutputStream tOut, InputStream is, String fileName) throws IOException {
+        logger.info("Loading " + fileName);
         TarArchiveEntry policyTarEntry = new TarArchiveEntry(fileName);
         byte[] policyData = new byte[is.available()];
         policyTarEntry.setSize(is.read(policyData));
+        logger.debug("Data: " + new String(policyData));
         tOut.putArchiveEntry(policyTarEntry);
         tOut.write(policyData);
         tOut.closeArchiveEntry();
